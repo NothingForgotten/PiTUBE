@@ -1,0 +1,8 @@
+My PiTUBE-Client
+
+The features are:
+
+-use a config file  (~/.pitube/pitube.cfg) to save users audiomode and  the max.quality. If the program run the first time it will make this file (Default settings: audio over HDMI, max.quality = 18) 
+-insert a string to search for on youtube (the programm will return all found videos on page one)
+-browse trough the results (the program tell you the name and the length of every video)
+-watch the recommended Videos (show all recommended videos that youtube would show you on the videos page – still buggy)
