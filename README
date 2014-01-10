@@ -1,5 +1,8 @@
 My PiTUBE-Client
 
+You will need the Python Module 'BeautifulSoup' to use this.
+
+
 The features are:
 
 -use a config file  (~/.pitube/pitube.cfg) to save users audiomode and  the max.quality. If the program run the first time it will make this file (Default settings: audio over HDMI, max.quality = 18) 
