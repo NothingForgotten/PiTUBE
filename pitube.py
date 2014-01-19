@@ -1,158 +1,247 @@
 # /usr/bin/python
 # -*- coding: utf-8 -*-
-
+############################################Import##################################
 from BeautifulSoup import BeautifulSoup
 import os
 import urllib
-
-version = 'REV 2' #Global version number
-
-config_path = os.path.expanduser('~') + '/.pitube'
-config_file = config_path + '/pitube.cfg'
-
-def load_config():
-	'''Try to load the config-file from [~/.pitube].
+import tty
+import termios
+import sys
+import cPickle
+import time
+###########################################Classes##################################
+class yt_options():
 	
-		If not possible create a new file at this possition.'''
-	
-	if not os.path.exists(config_path):
-		os.makedirs(config_path)
-		print 'Made directory'
+	def __init__(self):
 		
-	HDMI_audio_mode = False
-	max_quality = 18
+		config_path = os.path.expanduser('~') + '/.pitube'
+		config_file = config_path + '/pitube.cfg'
 		
-	if os.path.exists(config_file):
-	
-		f = file(config_file, 'r')
-		while True:
-			line = f.readline()
+		if not os.path.exists(config_path):
+			os.makedirs(config_path)
+			print 'Made directory'
 			
-			if len(line) == 0:
-				break
+		HDMI_audio_mode = True
+		max_quality = 18
+		
+		if os.path.exists(config_file):
+	
+			f = file(config_file, 'r')
+			while True:
+				line = f.readline()
 			
-			exec(line)
-		
-		print 'Written Config-File'
+				if len(line) == 0:
+					break
+			
+				exec(line)
 
-	else:
-		f =	file(config_file, 'w')
-		write_string = '#Audio-Output over HDMI\nHDMI_audio_mode = True\n#Max. Video Quality. Visit "http://en.wikipedia.org/wiki/Youtube#Quality_and_codecs" for more infos.\nmax_quality = 18'
-		f.write(write_string)
-		print 'Written Config-File'
-	f.close()
-	
-	configs = {'HDMI' : HDMI_audio_mode , 'QUALITY' : max_quality}
-	
-	return configs
+		else:
+			f =	file(config_file, 'w')
+			write_string = '#Audio-Output over HDMI\nHDMI_audio_mode = True\n#Max. Video Quality. Visit "http://en.wikipedia.org/wiki/Youtube#Quality_and_codecs" for more infos.\nmax_quality = 18'
+			f.write(write_string)
+			print 'Written Config-File'
+			
+		f.close()
+		if HDMI_audio_mode == True:	
+			self.HDMI = ' -o hdmi '
+		else:
+			self.HDMI = ' '
+		self.quality = max_quality
 
-def search_input():
-	'''Empties the screen and take a string to search for, returns the Youtube-URL for the results.'''
+class yt_video():
 	
-	for i in range (0, 90):
-		print ''
+	def __init__(self,name='NA',link='NA',length='NA'):
 		
-	print 'PiTUBE - YouTube-Client for the Raspberry Pi				V - %s' % (version)
+		self.name = name
+		self.length = length
+		self.url = link
+		
+	def play(self,options, time=0):
+		
+		youtubedl_command = 'youtube-dl --max-quality=' + str(options.quality) + ' -g ' + self.url + '#t=' + str(time)
+		player_command = 'omxplayer' + options.HDMI + '$(' + youtubedl_command + ') >> /dev/null'
+		os.system(player_command)
+		
+	def save(self):
+		
+		save = [self.name,self.length,self.url]
+		return save
+		
+	def load(self,save):
+		
+		self.name = save[0]
+		self.length = save[1]
+		self.url = save[2]
+		
+
+class yt_list():
 	
-	for i in range (0,9):
-		print ''
+		def __init__(self):
+			
+			self.vid_list = []
+			self.url ='NA'
+			self.query = ''
+			
+		def find_vids(self,query,page=1):
+			
+			self.query = query
+			query = query.lower()
+			query = str.replace(query, ' ' , '+')
+			youtube_url = 'https://www.youtube.com/results?search_query=' + query + '&page=' + str(page)
+			self.url = youtube_url
+			
+			self.get_data(True)
+			
+		def url_set(self,url):
+			
+			self.url = url
+	
+	
+		def get_data(self,main_search=False):
+			
+			self.vid_list = []
+			
+			site = urllib.urlopen(self.url)
+			contend = site.read()
+			site.close()
+			soup = BeautifulSoup(contend)
+			
+			number = 0
+			
+			urls = []
+			names = []
+			lengths = []
+			
+			for j in soup.findAll('a', href = True):
+				
+				check_vid = j['href'].find('/watch?v=') #if this element is a video-url check_vid should be != -1
+				check_list = j['href'].find('&list=') # if this link is no playlist check_list should be == -1
+				check_comment = j.text.find('http://www.youtube.com/watch?v=') # if the link isnt part of a comment check_comment schould be == -1
+				
+	
+				
+				if main_search == True:
+				
+					if check_vid != -1 and check_list == -1 and check_comment == -1 and number == 0:
+						lengths.append(j.text)
+						urls.append('http://www.youtube.com' + j['href'])
+						number = 1
+						
+					elif check_vid != -1 and check_list == -1 and check_comment == -1 and number == 1:
+						names.append(j.text)
+						number = 0
+				else:
+					if check_vid != -1 and check_list == -1 and check_comment == -1:
+						names.append(j.text)
+						urls.append('http://www.youtube.com' + j['href'])
+						lengths.append('NA')					
+			
+			for k in range (0, len(names)-1):
+						
+				vid = yt_video(names[k],urls[k],lengths[k])
+				
+				if vid.name != 'NA':
+					self.vid_list.append(vid)
+					
+		def save(self, num):
+			
+			path = os.path.expanduser('~') + '/.pitube/bookmark.data'
+			
+			try:
+				f = file(path,'r')
+				sav_list = cPickle.load(f)
+				f.close()
+			except:
+				sav_list = []
+				print 'Made Bookmark file...'
+				time.sleep(1)
+			
+			sav = self.vid_list[num].save()
+			sav_list.append(sav)
+				
+			f = file(path,'w')
+			cPickle.dump(sav_list,f)
+			f.close()
+			
+		def load(self):
+			
+			path = os.path.expanduser('~') + '/.pitube/bookmark.data'
+			
+			f = file(path, 'r')
+			load_list = cPickle.load(f)
+			f.close()
+			
+			for a in load_list:
+				b = yt_video()
+				b.load(a)
+				self.vid_list.append(b)
+			
+###################################Functions##########################################
+
+def getkey():
+	
+	a = sys.stdin.fileno()
+	old = termios.tcgetattr(a)
+	
+	try:
+		tty.setraw(a)
+		char = sys.stdin.read(1)
+	finally:
+		termios.tcsetattr(a, termios.TCSADRAIN, old)
+		
+	return char
+					
+def user_input():
 		
 	user_input = raw_input('Search: ')
-	
-	user_input = user_input.lower()
-	
-	user_input = str.replace(user_input, ' ' , '+')
-	
-	youtube_url = 'https://www.youtube.com/results?search_query=' + user_input
+	print 'Searching... Please hold on.'
+	return  user_input
 
-	return youtube_url
-	
-def read_urls(query, main_search = False):
-	'''Take a string fron search_input() and returns a Dictionary with URLs, Names and lengths of the videos.
-	
-		btw this clears the screan and prints "Searching..."'''
-	for i in range (0,90):
-		print ''
-	
-	print 'Searching...'
-	
-	site = urllib.urlopen(query)
-	contend = site.read()
-	site.close()
-	soup = BeautifulSoup(contend)
-	
-	links = []
-	length =[]
-	names = []
-	
-	number = 0
-	
-	for j in soup.findAll('a', href = True):
-		
-		check_vid = j['href'].find('/watch?v=') #if this element is a video-url check_vid should be != -1
-		check_list = j['href'].find('&list=') # if this link is no playlist check_list should be == -1
-		check_comment = j.text.find('http://www.youtube.com/watch?v=') # if the link isnt part of a comment check_comment schould be == -1
-		if main_search == True:
-			if check_vid != -1 and check_list == -1 and check_comment == -1 and number == 0:
-					length.append(j.text)
-					links.append('http://www.youtube.com' + j['href'])
-					number = 1
-			elif check_vid != -1 and check_list == -1 and check_comment == -1 and number == 1:
-					names.append(j.text)
-					number = 0
-		else:
-			if check_vid != -1 and check_list == -1 and check_comment == -1:
-				names.append(j.text)
-				links.append('http://www.youtube.com' + j['href'])
-	result = {}
-			
-	result['URL'] = links[:]
-	result['Name'] = names[:]
-	result['Length'] = length[:]
-		
-	return result
-
-def print_results(results, configs, main_search = False):
+def print_results(vid_list, search_title = 'Video Search'):
 	
 	'''Print the results and takes input from user.'''
+	
+	options = yt_options()
 	
 	running = True
 	vid_num = 0
 	user_input = ''
+	page = 1
 	
 	while running:
 		
-		for i in range (0,90):
-			print ''
+		os.system('clear')
 		
-		if main_search == False:
-			print 'Recommented Videos:'
+		
+		print search_title , '(Page: ' + str(page) +')'
 			
-		print 'Video %d of %d' % (vid_num + 1, len(results['URL'])-1)
+		print 'Video %d of %d' % (vid_num + 1, len(vid_list.vid_list)-1)
 		
 		for i in range (0,6):
 			print ''
 		
-		print results['Name'][vid_num].encode('utf8')
+		print vid_list.vid_list[vid_num].name.encode('utf8')
 		print ''
 		
-		if main_search == True:
-			print 'Video length:' , results['Length'][vid_num]
-		else:
-			print ''
+		print 'Video length:' , vid_list.vid_list[vid_num].length.encode('utf8')
+		
+		print 'Video URL:' , vid_list.vid_list[vid_num].url.encode('utf8')
 		
 		for i in range (0,6):
 			print ''
 			
-		print '[n] Next Video [p] Previous Video [w] Watch Video [s] New Search [r] Recommented Videos [q] Quit'
+		print '[n] Next Video [p] Previous Video [u] Page Up [d] Page down'
+		print '[w] Watch Video [s] New Search' 
+		print '[r] Recommended Videos [b] Bookmark Video'
+		print '[q] Quit to title'
 		
-		user_input = raw_input()
+		user_input = getkey()
 		
 		if user_input.lower() == 'n':
 			
 			vid_num += 1
 			
-			if vid_num == len(results['URL'])-1:
+			if vid_num == len(vid_list.vid_list)-1:
 				
 				vid_num = 0
 		
@@ -162,42 +251,120 @@ def print_results(results, configs, main_search = False):
 			
 			if vid_num < 0:
 				
-				vid_num = len(results['URL'])-2
+				vid_num = len(vid_list.vid_list)-2
 				
+		if user_input.lower() == 'u':
+			
+			if search_title != 'Bookmarks': 
+				page += 1
+				print 'Getting Page %d ... Please hold on.' % (page)
+				vid_list.find_vids(vid_list.query, page)
+				
+			else:
+				print 'Not here...'
+				time.sleep(1)
+		
+		if user_input.lower() == 'd':
+			
+			if search_title != 'Bookmarks':
+				if page > 1:
+					page -= 1
+					print 'Getting Page %d ... Please hold on.' % (page)
+					vid_list.find_vids(vid_list.query, page)
+				
+				else:
+					print 'There are no negative Sites'
+					
+			else:
+				print 'Not here...'
+				time.sleep(1)
+					
 		if user_input.lower() == 'w':
 			
 			for i in range (0,90):
 				print ''
 			
-			print 'Connecting to Video... Please hold on.'
+			print '[1] Play from beginning\n\n[2] Play from...\n\n[3] Back'
+			t = 0
+			loop = True
+			play = True
+			while loop:
+				iput = getkey()
+				if iput == '1':
+					loop = False
+				elif iput == '2':
+					t = int(raw_input('Enter time in seconds>'))
+					loop = False
+				elif iput == '3':
+					loop = False
+					play = False
+					
+			if play == True:
+						
+				print 'Connecting to Video... Please hold on.'
 			
-			youtubedl_command = 'youtube-dl --max-quality=' + str(configs['QUALITY']) + ' -g ' + results['URL'][vid_num]
-			
-			if configs['HDMI'] == False:
-				hdmi = ' '
-			else:
-				hdmi = ' -o hdmi '
-				
-			player_command = 'omxplayer' + hdmi + '$(' + youtubedl_command + ') >> /dev/null'
-			#player_command = 'mplayer -fs $(' + youtubedl_command + ') >> /dev/null'
-			#^^^ This line above was just added to test this script on a Linux-PC 
-			os.system(player_command)
+				vid_list.vid_list[vid_num].play(options,t)
 			
 		if user_input.lower() == 's':
 			
-			running = False
-			print_results(read_urls(search_input(), True), load_config(), True)
+			print ''
+			q = raw_input('>>>New Search: ')
+			print 'Searching... Please hold on'
+			vid_list.find_vids(q)
 		
 		if user_input.lower() == 'r':
 			
-			running = False
-			print_results(read_urls(results['URL'][vid_num]), load_config())
+			print 'Getting recommended Videos...	Please hold on'
+			vid_list.url_set(vid_list.vid_list[vid_num].url)
+			vid_list.get_data(False)
 		
 		if user_input.lower() == 'q':
 			
-			for i in range (0,90):
-				print ''
+			os.system('clear')
 			
 			running = False
+			
+		if user_input.lower() == 'b':
+			
+			if search_title != 'Bookmarks':
+			
+				vid_list.save(vid_num)
+				
+			else:
+				print 'Not here...'
+				time.sleep(1)
+			
+def main_menue(version):
+		
+	mainrun = True
+		
+	while mainrun:
+			
+		os.system('clear')
+		
+		print 'PiTUBE - YouTube-Client for the Raspberry Pi	[V: %s]' % (version)
+		
+		print '\n[1] Search videos\n\n[2] Show bookmarks\n\n[3] Quit'
+		
+		uinput = getkey()
+			
+		if uinput == '1':
+				
+			a = yt_list()
+			a.find_vids(user_input())
+			print_results(a)
+				
+		if uinput == '2':
+				
+			b = yt_list()
+			b.load()
+			print_results(b,'Bookmarks')
+			
+		if uinput == '3':
+			
+			mainrun = False
+				
+######################################Programm###########################################
+version = 'Rev-3'
 
-print_results(read_urls(search_input(), True), load_config(), True)
+main_menue(version)
