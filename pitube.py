@@ -56,13 +56,15 @@ class yt_video():
 		self.length = length
 		self.url = link
 		
-	def play(self,options, time=0):
+	def play(self,options):
 		
-		youtubedl_command = 'youtube-dl --max-quality=' + str(options.quality) + ' -g ' + self.url + '#t=' + str(time)
+		youtubedl_command = 'youtube-dl --max-quality=' + str(options.quality) + ' -g ' + self.url
 		player_command = 'omxplayer' + options.HDMI + '$(' + youtubedl_command + ') >> /dev/null'
 		os.system(player_command)
 		
 	def save(self):
+		
+		path = os.path.expanduser('~') + '/.pitube/bookmark.data'
 		
 		save = [self.name,self.length,self.url]
 		return save
@@ -153,7 +155,7 @@ class yt_list():
 				f.close()
 			except:
 				sav_list = []
-				print 'Made Bookmark file...'
+				print 'Made Bookmark...'
 				time.sleep(1)
 			
 			sav = self.vid_list[num].save()
@@ -215,7 +217,7 @@ def print_results(vid_list, search_title = 'Video Search'):
 		
 		print search_title , '(Page: ' + str(page) +')'
 			
-		print 'Video %d of %d' % (vid_num + 1, len(vid_list.vid_list)-1)
+		print 'Video %d of %d' % (vid_num +1, len(vid_list.vid_list))
 		
 		for i in range (0,6):
 			print ''
@@ -241,7 +243,7 @@ def print_results(vid_list, search_title = 'Video Search'):
 			
 			vid_num += 1
 			
-			if vid_num == len(vid_list.vid_list)-1:
+			if vid_num == len(vid_list.vid_list):
 				
 				vid_num = 0
 		
@@ -251,12 +253,13 @@ def print_results(vid_list, search_title = 'Video Search'):
 			
 			if vid_num < 0:
 				
-				vid_num = len(vid_list.vid_list)-2
+				vid_num = len(vid_list.vid_list)-1
 				
 		if user_input.lower() == 'u':
 			
 			if search_title != 'Bookmarks': 
 				page += 1
+				vid_num = 0
 				print 'Getting Page %d ... Please hold on.' % (page)
 				vid_list.find_vids(vid_list.query, page)
 				
@@ -269,6 +272,7 @@ def print_results(vid_list, search_title = 'Video Search'):
 			if search_title != 'Bookmarks':
 				if page > 1:
 					page -= 1
+					vid_num = 0
 					print 'Getting Page %d ... Please hold on.' % (page)
 					vid_list.find_vids(vid_list.query, page)
 				
@@ -281,29 +285,11 @@ def print_results(vid_list, search_title = 'Video Search'):
 					
 		if user_input.lower() == 'w':
 			
-			for i in range (0,90):
-				print ''
-			
-			print '[1] Play from beginning\n\n[2] Play from...\n\n[3] Back'
-			t = 0
-			loop = True
-			play = True
-			while loop:
-				iput = getkey()
-				if iput == '1':
-					loop = False
-				elif iput == '2':
-					t = int(raw_input('Enter time in seconds>'))
-					loop = False
-				elif iput == '3':
-					loop = False
-					play = False
-					
-			if play == True:
+			os.system('clear')
 						
-				print 'Connecting to Video... Please hold on.'
+			print 'Connecting to Video... Please hold on.'
 			
-				vid_list.vid_list[vid_num].play(options,t)
+			vid_list.vid_list[vid_num].play(options)
 			
 		if user_input.lower() == 's':
 			
@@ -329,9 +315,30 @@ def print_results(vid_list, search_title = 'Video Search'):
 			if search_title != 'Bookmarks':
 			
 				vid_list.save(vid_num)
-				
+				print 'Made bookmark...'
+				time.sleep(1)
+			
 			else:
-				print 'Not here...'
+				
+				path = os.path.expanduser('~') + '/.pitube/bookmark.data'
+				try:
+					os.remove(path)
+				except:
+					print 'Made bookmark file...'
+				
+				vid_list.vid_list.pop(vid_num)
+				
+				for c in range (0,len(vid_list.vid_list)):
+					vid_list.save(c)
+				
+				if len(vid_list.vid_list) == 0:
+			
+					running == False
+					break 
+					
+				vid_num = 0
+					
+				print 'Removed bookmark...'
 				time.sleep(1)
 			
 def main_menue(version):
@@ -355,16 +362,26 @@ def main_menue(version):
 			print_results(a)
 				
 		if uinput == '2':
+			
+			path = os.path.expanduser('~') + '/.pitube/bookmark.data'
+			
+			if os.path.exists(path):
 				
-			b = yt_list()
-			b.load()
-			print_results(b,'Bookmarks')
+				b = yt_list()
+				b.load()
+				print_results(b,'Bookmarks')
+				
+			else:
+				
+				print 'No Bookmarks...'
+				time.sleep(1)
 			
 		if uinput == '3':
 			
 			mainrun = False
 				
 ######################################Programm###########################################
-version = 'Rev-3'
+version = 'Rev-3.0.1'
 
 main_menue(version)
+
