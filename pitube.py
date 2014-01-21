@@ -234,7 +234,10 @@ def print_results(vid_list, search_title = 'Video Search'):
 			
 		print '[n] Next Video [p] Previous Video [u] Page Up [d] Page down'
 		print '[w] Watch Video [s] New Search' 
-		print '[r] Recommended Videos [b] Bookmark Video'
+		if search_title != 'Bookmarks':
+			print '[r] Recommended Videos [b] Bookmark Video'
+		else:
+			print '[r] Recommended Videos [b] Remove bookmark'
 		print '[q] Quit to title'
 		
 		user_input = getkey()
@@ -320,26 +323,33 @@ def print_results(vid_list, search_title = 'Video Search'):
 			
 			else:
 				
-				path = os.path.expanduser('~') + '/.pitube/bookmark.data'
-				try:
-					os.remove(path)
-				except:
-					print 'Made bookmark file...'
+				print 'Really remove this bookmark?(y/n)'
 				
-				vid_list.vid_list.pop(vid_num)
+				yn = getkey()
 				
-				for c in range (0,len(vid_list.vid_list)):
-					vid_list.save(c)
+				if yn == 'y':
+					
+					print 'Removed bookmark...'
 				
-				if len(vid_list.vid_list) == 0:
+					path = os.path.expanduser('~') + '/.pitube/bookmark.data'
+					try:
+						os.remove(path)
+					except:
+						print 'Made new bookmark file...'
+				
+					vid_list.vid_list.pop(vid_num)
+				
+					for c in range (0,len(vid_list.vid_list)):
+						vid_list.save(c)
+				
+					if len(vid_list.vid_list) == 0:
 			
-					running == False
-					break 
+						running == False
+						break 
 					
-				vid_num = 0
+					vid_num = 0
 					
-				print 'Removed bookmark...'
-				time.sleep(1)
+					time.sleep(1)
 			
 def main_menue(version):
 		
@@ -381,7 +391,6 @@ def main_menue(version):
 			mainrun = False
 				
 ######################################Programm###########################################
-version = 'Rev-3.0.1'
+version = 'Rev-3.0.2'
 
 main_menue(version)
-
