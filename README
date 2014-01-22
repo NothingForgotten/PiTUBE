@@ -1,11 +1,31 @@
-My PiTUBE-Client
+PiTUBE - YouTube-Client for the RASPBERRY PI(c) Mini-Computer
 
-You will need the Python Module 'BeautifulSoup' to use this.
+This is a Python script that allows you to watch streaming videos from http://www.youtube.com/ with Rasperry Pi's
+standard media player (omxplayer).
+
+It uses:
+
+youtube-dl
+Python module: BeautifulSoup (python-bs4)
+(omxplayer)
+
+Features:
+
+-Search videos on youtube.com
+-watch videos in different qualities (ussing: ~/.pitube/pitube.cfg)
+-sound over HDMI or analoge output (ussing: ~/.pitube/pitube.cfg)
+-find recomended videos
+-bookmark videos
+
+Changelog:
+
+Rev3: First release
+Rev3.0.1: Several Bugfixes, add possibility to remove bookmarks
+Rev3.0.2: You will be asked before you can delete a bookmark
 
 
-The features are:
+This script is distributed under GPL.v3
 
--use a config file  (~/.pitube/pitube.cfg) to save users audiomode and  the max.quality. If the program run the first time it will make this file (Default settings: audio over HDMI, max.quality = 18) 
--insert a string to search for on youtube (the programm will return all found videos on page one)
--browse trough the results (the program tell you the name and the length of every video)
--watch the recommended Videos (show all recommended videos that youtube would show you on the videos page – still buggy)
+Have Fun!
+
+
