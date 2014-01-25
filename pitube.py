@@ -47,6 +47,58 @@ class yt_options():
 		else:
 			self.HDMI = ' '
 		self.quality = max_quality
+		
+	def set_them(self):
+		
+		os.system('clear')
+		looping = True
+		hdmi = True
+		quality = 18
+		
+		while looping:
+			print 'Play audio over HDMI? (y/n)'
+			key = getkey()
+			
+			if key.lower()=='y':
+				hdmi = True
+				looping = False
+			elif key.lower()=='n':
+				hdmi = False
+				looping = False
+				
+		
+		looping =  True
+		
+		while looping:
+			print 'Maximum Quality. [h]igh [m]edium [l]ow'
+			key = getkey()
+			
+			if key.lower()=='h':
+				quality=22
+				looping = False
+			elif key.lower()=='m':
+				quality=18
+				looping = False
+			elif key.lower()=='l':
+				quality=17
+				looping = False
+				
+		path = os.path.expanduser('~') + '/.pitube/pitube.cfg'
+			
+		try:
+			os.remove(path)
+		except:
+			None
+		
+		f =	file(path, 'w')
+		write_string = '#Audio-Output over HDMI\nHDMI_audio_mode = %s\n#Max. Video Quality. Visit "http://en.wikipedia.org/wiki/Youtube#Quality_and_codecs" for more infos.\nmax_quality = %s' % (hdmi,quality)
+		f.write(write_string)
+		print 'Written Config-File'
+		
+		self.__init__
+		
+		print 'Done...'
+		time.sleep(1)
 
 class yt_video():
 	
@@ -361,7 +413,7 @@ def main_menue(version):
 		
 		print 'PiTUBE - YouTube-Client for the Raspberry Pi	[V: %s]' % (version)
 		
-		print '\n[1] Search videos\n\n[2] Show bookmarks\n\n[3] Quit'
+		print '\n[1] Search videos\n\n[2] Show bookmarks\n\n[3] Configurations\n\n[4] Quit'
 		
 		uinput = getkey()
 			
@@ -388,9 +440,23 @@ def main_menue(version):
 			
 		if uinput == '3':
 			
-			mainrun = False
+			o = yt_options()
+			o.set_them()
+			
+		if uinput == '4':
+			os.system('clear')
+			print 'You want to leave?\n\n[1] Back to shell\n\n[2] Shutdown\n\n[3] Do not leave'
+			key=getkey()
+			
+			if key.lower()=='1':
+				mainrun = False
+				
+			if key.lower()=='2':
+				mainrun = False
+				os.system('sudo shutdown -h now')
 				
 ######################################Programm###########################################
-version = 'Rev-3.0.2'
+version = 'Rev-3.1.0'
 
-main_menue(version)
+if __name__ == '__main__':
+	main_menue(version)
