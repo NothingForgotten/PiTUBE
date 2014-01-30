@@ -186,16 +186,17 @@ class yt_list():
 				if main_search == True:
 				
 					if check_vid != -1 and check_list == -1 and check_comment == -1 and number == 0:
-						lengths.append(j.text)
+						
+						lengths.append(j.text[9:-2])
 						urls.append('http://www.youtube.com' + j['href'])
 						number = 1
 						
 					elif check_vid != -1 and check_list == -1 and check_comment == -1 and number == 1:
-						names.append(j.text)
+						names.append(j.text[1:-4])
 						number = 0
 				else:
 					if check_vid != -1 and check_list == -1 and check_comment == -1:
-						names.append(j.text)
+						names.append(j.text[1:-4])
 						urls.append('http://www.youtube.com' + j['href'])
 						lengths.append('NA')					
 			
