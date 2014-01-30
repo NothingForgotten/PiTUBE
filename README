@@ -23,6 +23,7 @@ Rev3: First release
 Rev3.0.1: Several Bugfixes, added possibility to remove bookmarks
 Rev3.0.2: You will be asked before you can delete a bookmark
 Rev3.1.0: Added possibility to change the configs from inside the programm, added several optios when leaving PiTUBE
+Rev3.1.1: Fixed problem with loading the BeautifulSoup-Module (Sorry for this)
 
 Contact:
 
