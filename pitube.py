@@ -1,7 +1,6 @@
-# /usr/bin/python
+#! /usr/bin/python
 # -*- coding: utf-8 -*-
 ############################################Import##################################
-from BeautifulSoup import BeautifulSoup
 import os
 import urllib
 import tty
@@ -9,6 +8,16 @@ import termios
 import sys
 import cPickle
 import time
+
+try:
+	from bs4 import BeautifulSoup
+except:
+	print 'I have to install bs4 first.'
+	time.sleep(1)
+	os.system('sudo apt-get install python-bs4')
+	print 'Please restart PiTUBE now.'
+	sys.exit()
+	
 ###########################################Classes##################################
 class yt_options():
 	
@@ -456,7 +465,7 @@ def main_menue(version):
 				os.system('sudo shutdown -h now')
 				
 ######################################Programm###########################################
-version = 'Rev-3.1.0'
+version = 'Rev-3.1.1'
 
 if __name__ == '__main__':
 	main_menue(version)
